@@ -1,0 +1,70 @@
+import pickle, time, sys, os, re, random
+from bs4 import BeautifulSoup
+import requests
+import json 
+import json
+import base64
+
+session = requests.Session()
+session.headers = {'User-Agent': ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+           "(KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36")}
+
+def return_all_subs():
+        subs = requests.get('https://raw.githubusercontent.com/ssrzz/vps/master/conf.d/subssr.txt').text.split("\n")
+        return subs
+
+def eliminate_source(suburl = ''):
+        print(suburl)
+        s = ""
+        try:
+                res = session.get(suburl)
+                s = res.text        
+        except Exception as e:
+                print(e)
+
+        ssrs = base64.b64decode(s + '=' * (len(s) % 4)).decode().split('\n')
+        if len(ssrs) < 3:
+                print(ssrs)
+                return 
+        headless_ssrs = ssrs[3:]
+        random.shuffle(headless_ssrs)
+        new_ssrs = ""
+        for i, cur in enumerate(headless_ssrs):
+                if cur == '': continue
+                j = cur.replace('ssr://', '')
+                decoded = base64.urlsafe_b64decode(j + '=' * (-len(j) % 4)).decode()
+                print(decoded)
+
+                new_remark = base64.b64encode(("Pluto_FreeSSR_" + str(i)).encode('ascii')).decode('utf8')
+                #new_remark = base64.b64encode(("fuckgfw x " + str(random.randint(1, 10086))).encode('ascii')).decode('utf8')
+
+                new_group = base64.b64encode(("FUCKGFW").encode('ascii')).decode('utf8')
+
+
+                new_config = re.sub('group=(.*)', 'group={}'.format(new_group), decoded)
+                new_config = re.sub('remarks=(.*)\&', 'remarks={}&'.format(new_remark), new_config)
+
+                new_config = 'ssr://' + base64.b64encode(new_config.encode('ascii')).decode('utf8')
+                new_ssrs += new_config + "\n"
+        # res = base64.b64encode(new_ssrs.encode('ascii')).decode('utf8')
+        return new_ssrs
+
+def write_to_html(res, target_html='ssrmix.html'):
+        #target_file = '/var/www/html/' if os.path.exists('/var/www/html/') else './'
+        target_file = target_html
+        with open(target_file, 'w') as f:
+                f.write(res)
+
+
+if __name__ == "__main__":
+    subs = return_all_subs()
+    res = ''
+    for i in subs:
+            res += eliminate_source(i)
+    res = base64.b64encode(res.encode('ascii')).decode('utf8')
+    write_to_html(res)    
+
+
+
+
+
